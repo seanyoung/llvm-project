@@ -297,8 +297,8 @@ SDValue BPFTargetLowering::LowerFormalArguments(
     }
   }
 
-  if (IsVarArg || MF.getFunction().hasStructRetAttr()) {
-    fail(DL, DAG, "functions with VarArgs or StructRet are not supported");
+  if (IsVarArg) {
+    fail(DL, DAG, "functions with VarArgs");
   }
 
   return Chain;
@@ -340,14 +340,6 @@ SDValue BPFTargetLowering::LowerCall(TargetLowering::CallLoweringInfo &CLI,
 
   if (Outs.size() > MaxArgs)
     fail(CLI.DL, DAG, "too many args to ", Callee);
-
-  for (auto &Arg : Outs) {
-    ISD::ArgFlagsTy Flags = Arg.Flags;
-    if (!Flags.isByVal())
-      continue;
-
-    fail(CLI.DL, DAG, "pass by value not supported ", Callee);
-  }
 
   auto PtrVT = getPointerTy(MF.getDataLayout());
   Chain = DAG.getCALLSEQ_START(Chain, NumBytes, 0, CLI.DL);
