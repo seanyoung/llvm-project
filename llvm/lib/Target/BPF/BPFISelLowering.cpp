@@ -298,7 +298,7 @@ SDValue BPFTargetLowering::LowerFormalArguments(
   }
 
   if (IsVarArg) {
-    fail(DL, DAG, "functions with VarArgs");
+    fail(DL, DAG, "functions with VarArgs are not supported");
   }
 
   return Chain;
@@ -449,7 +449,8 @@ BPFTargetLowering::LowerReturn(SDValue Chain, CallingConv::ID CallConv,
     return DAG.getNode(Opc, DL, MVT::Other, Chain);
   }
 
-  // Analize return values.
+  // Analyze return values.
+  assert(Outs.size() < 2 && "Too many return values");
   CCInfo.AnalyzeReturn(Outs, getHasAlu32() ? RetCC_BPF32 : RetCC_BPF64);
 
   SDValue Flag;
