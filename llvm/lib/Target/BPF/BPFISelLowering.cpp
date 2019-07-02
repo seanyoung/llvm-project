@@ -262,7 +262,7 @@ SDValue BPFTargetLowering::LowerFormalArguments(
         break;
       }
     } else {
-      fail(DL, DAG, "Defined with too many args");
+      fail(DL, DAG, "BPF supports a maximum of 5 arguments");
       InVals.push_back(DAG.getConstant(0, DL, VA.getLocVT()));
     }
   }
@@ -310,7 +310,7 @@ SDValue BPFTargetLowering::LowerCall(TargetLowering::CallLoweringInfo &CLI,
   unsigned NumBytes = CCInfo.getNextStackOffset();
 
   if (Outs.size() > MaxArgs)
-    fail(CLI.DL, DAG, "Too many args to callee: ", Callee);
+    fail(CLI.DL, DAG, "BPF supports a maximum of 5 arguments ", Callee);
 
   auto PtrVT = getPointerTy(MF.getDataLayout());
   Chain = DAG.getCALLSEQ_START(Chain, NumBytes, 0, CLI.DL);
@@ -366,9 +366,10 @@ SDValue BPFTargetLowering::LowerCall(TargetLowering::CallLoweringInfo &CLI,
                                         G->getOffset(), 0);
   } else if (ExternalSymbolSDNode *E = dyn_cast<ExternalSymbolSDNode>(Callee)) {
     Callee = DAG.getTargetExternalSymbol(E->getSymbol(), PtrVT, 0);
-    dbgs() << "Info: A call to built-in function '"
-           << StringRef(E->getSymbol())
-           << "' remains unresolved\n";
+    // This is not a warning but info, will be resolved on load
+    // fail(CLI.DL, DAG, Twine("A call to built-in function '"
+    //                         + StringRef(E->getSymbol())
+    //                         + "' remains unresolved"));
   }
 
   // Returns a chain & a flag for retval copy to use.
