@@ -25,6 +25,7 @@ namespace {
 class BPF final : public TargetInfo {
 public:
   BPF();
+  RelType getDynRel(RelType type) const override;
   RelExpr getRelExpr(RelType Type, const Symbol &S,
                      const uint8_t *Loc) const override;
   void relocateOne(uint8_t *Loc, RelType Type, uint64_t Val) const override;
@@ -34,6 +35,13 @@ public:
 BPF::BPF() { 
   noneRel = R_BPF_NONE;
   relativeRel = R_BPF_64_RELATIVE;
+}
+
+RelType BPF::getDynRel(RelType type) const {
+  if (type == R_BPF_64_32) {
+    return type;
+  }
+  return R_ARM_NONE;
 }
 
 RelExpr BPF::getRelExpr(RelType Type, const Symbol &S,
