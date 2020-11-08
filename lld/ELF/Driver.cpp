@@ -175,8 +175,8 @@ std::vector<std::pair<MemoryBufferRef, uint64_t>> static getArchiveMembers(
     v.push_back(std::make_pair(mbref, c.getChildOffset()));
   }
   if (err)
-    fatal(mb.getBufferIdentifier() + ": Archive::children failed: " +
-          toString(std::move(err)));
+    fatal(mb.getBufferIdentifier() +
+          ": Archive::children failed: " + toString(std::move(err)));
 
   // Take ownership of memory buffers created for members of thin archives.
   for (std::unique_ptr<MemoryBuffer> &mb : file->takeThinBuffers())
@@ -275,17 +275,6 @@ void LinkerDriver::addLibrary(StringRef name) {
     addFile(*path, /*withLOption=*/true);
   else
     error("unable to find library -l" + name);
-}
-
-// This function is called on startup. We need this for LTO since
-// LTO calls LLVM functions to compile bitcode files to native code.
-// Technically this can be delayed until we read bitcode files, but
-// we don't bother to do lazily because the initialization is fast.
-static void initLLVM() {
-  InitializeAllTargets();
-  InitializeAllTargetMCs();
-  InitializeAllAsmPrinters();
-  InitializeAllAsmParsers();
 }
 
 // Some command line options or some combinations of them are not allowed.
@@ -487,7 +476,6 @@ void LinkerDriver::main(ArrayRef<const char *> argsArr) {
   if (args.hasArg(OPT_version))
     return;
 
-  initLLVM();
   createFiles(args);
   if (errorCount())
     return;
@@ -859,7 +847,8 @@ static void readConfigs(opt::InputArgList &args) {
   config->defineCommon = args.hasFlag(OPT_define_common, OPT_no_define_common,
                                       !args.hasArg(OPT_relocatable));
   config->demangle = args.hasFlag(OPT_demangle, OPT_no_demangle, true);
-  config->dependentLibraries = args.hasFlag(OPT_dependent_libraries, OPT_no_dependent_libraries, true);
+  config->dependentLibraries =
+      args.hasFlag(OPT_dependent_libraries, OPT_no_dependent_libraries, true);
   config->disableVerify = args.hasArg(OPT_disable_verify);
   config->discard = getDiscard(args);
   config->dwoDir = args.getLastArgValue(OPT_plugin_opt_dwo_dir_eq);
@@ -925,8 +914,7 @@ static void readConfigs(opt::InputArgList &args) {
       args.hasFlag(OPT_print_icf_sections, OPT_no_print_icf_sections, false);
   config->printGcSections =
       args.hasFlag(OPT_print_gc_sections, OPT_no_print_gc_sections, false);
-  config->printSymbolOrder =
-      args.getLastArgValue(OPT_print_symbol_order);
+  config->printSymbolOrder = args.getLastArgValue(OPT_print_symbol_order);
   config->rpath = getRpath(args);
   config->relocatable = args.hasArg(OPT_relocatable);
   config->saveTemps = args.hasArg(OPT_save_temps);
@@ -936,7 +924,8 @@ static void readConfigs(opt::InputArgList &args) {
   config->singleRoRx = args.hasArg(OPT_no_rosegment);
   config->soName = args.getLastArgValue(OPT_soname);
   config->sortSection = getSortSection(args);
-  config->splitStackAdjustSize = args::getInteger(args, OPT_split_stack_adjust_size, 16384);
+  config->splitStackAdjustSize =
+      args::getInteger(args, OPT_split_stack_adjust_size, 16384);
   config->strip = getStrip(args);
   config->sysroot = args.getLastArgValue(OPT_sysroot);
   config->target1Rel = args.hasFlag(OPT_target1_rel, OPT_target1_abs, false);
@@ -1060,11 +1049,11 @@ static void readConfigs(opt::InputArgList &args) {
   std::tie(config->androidPackDynRelocs, config->relrPackDynRelocs) =
       getPackDynRelocs(args);
 
-  if (auto *arg = args.getLastArg(OPT_symbol_ordering_file)){
+  if (auto *arg = args.getLastArg(OPT_symbol_ordering_file)) {
     if (args.hasArg(OPT_call_graph_ordering_file))
       error("--symbol-ordering-file and --call-graph-order-file "
             "may not be used together");
-    if (Optional<MemoryBufferRef> buffer = readFile(arg->getValue())){
+    if (Optional<MemoryBufferRef> buffer = readFile(arg->getValue())) {
       config->symbolOrderingFile = getSymbolOrderingFile(*buffer);
       // Also need to disable CallGraphProfileSort to prevent
       // LLD order symbols with CGProfile
@@ -1269,7 +1258,8 @@ void LinkerDriver::createFiles(opt::InputArgList &args) {
         error("unbalanced --push-state/--pop-state");
         break;
       }
-      std::tie(config->asNeeded, config->isStatic, inWholeArchive) = stack.back();
+      std::tie(config->asNeeded, config->isStatic, inWholeArchive) =
+          stack.back();
       stack.pop_back();
       break;
     }
@@ -1963,10 +1953,12 @@ template <class ELFT> void LinkerDriver::link(opt::InputArgList &args) {
   // Replace common symbols with regular symbols.
   replaceCommonSymbols();
 
-  // Split SHF_MERGE and .eh_frame sections into pieces in preparation for garbage collection.
+  // Split SHF_MERGE and .eh_frame sections into pieces in preparation for
+  // garbage collection.
   splitSections<ELFT>();
 
-  // Garbage collection and removal of shared symbols from unused shared objects.
+  // Garbage collection and removal of shared symbols from unused shared
+  // objects.
   markLive<ELFT>();
   demoteSharedSymbols();
 
@@ -2003,7 +1995,8 @@ template <class ELFT> void LinkerDriver::link(opt::InputArgList &args) {
                  [](InputSectionBase *s) { return isa<MergeInputSection>(s); });
 
   // Two input sections with different output sections should not be folded.
-  // ICF runs after processSectionCommands() so that we know the output sections.
+  // ICF runs after processSectionCommands() so that we know the output
+  // sections.
   if (config->icf != ICFLevel::None) {
     findKeepUniqueSections<ELFT>(args);
     doIcf<ELFT>();
