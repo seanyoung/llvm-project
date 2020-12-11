@@ -96,6 +96,8 @@ public:
     StringRef CPUName(Name);
     return isValidCPUName(CPUName);
   }
+
+  bool hasExtIntType() const override { return true; }
 };
 } // namespace targets
 } // namespace clang
