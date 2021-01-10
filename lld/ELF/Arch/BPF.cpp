@@ -28,7 +28,7 @@ public:
   RelType getDynRel(RelType type) const override;
   RelExpr getRelExpr(RelType Type, const Symbol &S,
                      const uint8_t *Loc) const override;
-  void relocateOne(uint8_t *Loc, RelType Type, uint64_t Val) const override;
+  void relocate(uint8_t *Loc, const Relocation &rel, uint64_t Val) const override;
 };
 } // namespace
 
@@ -58,8 +58,8 @@ RelExpr BPF::getRelExpr(RelType Type, const Symbol &S,
   return R_NONE;
 }
 
-void BPF::relocateOne(uint8_t *Loc, RelType Type, uint64_t Val) const {
-  switch (Type) {
+void BPF::relocate(uint8_t *Loc, const Relocation &rel, uint64_t Val) const {
+  switch (rel.type) {
     case R_BPF_64_32: {
       // Relocation of a symbol
       write32le(Loc + 4, ((Val - 8) / 8) & 0xFFFFFFFF);
@@ -74,7 +74,7 @@ void BPF::relocateOne(uint8_t *Loc, RelType Type, uint64_t Val) const {
       break;
     }
     default:
-      error(getErrorLocation(Loc) + "unrecognized reloc " + toString(Type));
+      error(getErrorLocation(Loc) + "unrecognized reloc " + toString(rel.type));
   }
 }
 
